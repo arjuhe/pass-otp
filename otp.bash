@@ -303,11 +303,13 @@ cmd_otp_code() {
   [[ -z "$OATH" ]] && die "Failed to generate OTP code: oathtool is not installed."
 
   local opts clip=0
-  opts="$($GETOPT -o c -l clip -n "$PROGRAM" -- "$@")"
+  local opts unsafe=0
+  opts="$($GETOPT -o uc -l clip,unsafe -n "$PROGRAM" -- "$@")"
   local err=$?
   eval set -- "$opts"
   while true; do case $1 in
     -c|--clip) clip=1; shift ;;
+    -u|--unsafe) unsafe=1; shift ;;
     --) shift; break ;;
   esac done
 
@@ -362,10 +364,17 @@ cmd_otp_code() {
     otp_insert "$path" "$passfile" "$replaced" "Increment HOTP counter for $path."
   fi
 
+  if [[ $unsafe -ne 0 ]]; then
+    pin=$(cmd_show otp/secret)
+    out="${pin}${out}"
+  fi
+
   if [[ $clip -ne 0 ]]; then
     clip "$out" "OTP code for $path"
+    echo $out
   else
-    echo "$out"
+    # echo -n "$out" | pbcopy
+		echo "$out"
   fi
 }
 
